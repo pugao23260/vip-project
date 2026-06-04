@@ -1129,15 +1129,10 @@
       <!-- 雲端同步 -->
       <div style="font-size:17px;font-weight:bold;color:#3d1f0f;margin-bottom:6px;">雲端同步</div>
       <div style="font-size:13px;color:#999;margin-bottom:16px;">
-        填入 Google Apps Script 網址後，可在兩台平板之間同步所有活動資料。
+        兩台平板共用同一份雲端資料，操作前請先同步。
       </div>
       <div style="background:#fff;border-radius:12px;padding:20px;margin-bottom:28px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
-        <div style="font-size:13px;color:#555;margin-bottom:6px;font-weight:500;">Apps Script 網址</div>
-        <input v-model="cloudUrl"
-               placeholder="https://script.google.com/macros/s/..."
-               style="width:100%;border:1px solid #ddd;border-radius:8px;padding:10px 12px;font-size:13px;margin-bottom:10px;box-sizing:border-box;">
-        <button class="btn-primary" style="width:100%;margin-bottom:16px;" @click="saveCloudUrl">儲存網址</button>
-        <div v-if="cloudUrl" style="display:flex;gap:10px;">
+        <div style="display:flex;gap:10px;">
           <button class="btn-primary" style="flex:1;background:#4a90d9;"
                   :disabled="!!cloudSyncing" @click="cloudLoad">
             {{ cloudSyncing === 'load' ? '載入中…' : '⬇ 從雲端載入' }}
@@ -1152,34 +1147,6 @@
                        fontSize: '13px', marginTop: '10px', textAlign: 'center' }">
           {{ cloudStatus }}
         </div>
-      </div>
-
-      <div style="font-size:17px;font-weight:bold;color:#3d1f0f;margin-bottom:6px;">資料備份與還原</div>
-      <div style="font-size:13px;color:#999;margin-bottom:24px;">
-        如果關閉頁面後資料消失，請先「匯出備份」把資料存成檔案，<br>
-        下次開啟後再「匯入還原」即可。
-      </div>
-
-      <!-- 匯出 -->
-      <div style="background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
-        <div style="font-weight:bold;font-size:15px;margin-bottom:6px;">📤 匯出備份</div>
-        <div style="font-size:13px;color:#666;margin-bottom:14px;">
-          將所有活動資料（含出席名單與排桌結果）下載成備份檔案。
-        </div>
-        <button class="btn-primary" style="width:100%;" @click="exportData">下載備份檔案</button>
-      </div>
-
-      <!-- 匯入 -->
-      <div style="background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
-        <div style="font-weight:bold;font-size:15px;margin-bottom:6px;">📥 匯入還原</div>
-        <div style="font-size:13px;color:#666;margin-bottom:14px;">
-          選取先前匯出的備份檔案，<strong style="color:#c0392b;">現有資料將被覆蓋</strong>，請確認後再執行。
-        </div>
-        <label style="display:block;">
-          <input type="file" accept=".txt,.json" style="display:none;" @change="importData" ref="importFileInput">
-          <span class="btn-primary" style="display:block;text-align:center;cursor:pointer;"
-                @click="$refs.importFileInput.click()">選擇備份檔案</span>
-        </label>
       </div>
 
       <!-- 統計 -->
@@ -1528,7 +1495,7 @@ createApp({
     const tab = ref('events')
 
     // ── 雲端同步狀態 ──────────────────────────
-    const cloudUrl     = ref(localStorage.getItem('cloud_url') || '')
+    const CLOUD_URL    = 'https://script.google.com/macros/s/AKfycbz5rDT9cF0pqJDiaF_GfdqdnJeft1Y-VaAyiNGXDZKW1StaQfCOX64ZvXhEanckMCFI/exec'
     const cloudStatus  = ref('')
     const cloudSyncing = ref('')  // '' | 'load' | 'save'
 
@@ -2261,19 +2228,11 @@ createApp({
     }
 
     // ── 雲端同步函式 ──────────────────────────
-    function saveCloudUrl() {
-      const url = cloudUrl.value.trim()
-      cloudUrl.value = url
-      localStorage.setItem('cloud_url', url)
-      cloudStatus.value = url ? '✓ 網址已儲存' : '網址已清除'
-    }
-
     async function cloudLoad() {
-      if (!cloudUrl.value) return
       cloudSyncing.value = 'load'
       cloudStatus.value = ''
       try {
-        const res  = await fetch(cloudUrl.value + '?t=' + Date.now())
+        const res  = await fetch(CLOUD_URL + '?t=' + Date.now())
         const data = await res.json()
         if (!Array.isArray(data.events)) throw new Error('資料格式錯誤，請確認 Apps Script 設定正確')
         if (!confirm(`雲端有 ${data.events.length} 個活動，確定要覆蓋本機資料嗎？`)) {
@@ -2295,11 +2254,10 @@ createApp({
     }
 
     async function cloudSave() {
-      if (!cloudUrl.value) return
       cloudSyncing.value = 'save'
       cloudStatus.value = ''
       try {
-        const res = await fetch(cloudUrl.value, {
+        const res = await fetch(CLOUD_URL, {
           method:   'POST',
           headers:  { 'Content-Type': 'text/plain' },
           body:     JSON.stringify({ events: events.value }),
@@ -2312,53 +2270,6 @@ createApp({
         cloudStatus.value = '✗ 儲存失敗：' + err.message
       }
       cloudSyncing.value = ''
-    }
-
-    // ── 設定：匯出 / 匯入 ─────────────────────
-    function exportData() {
-      const payload = {
-        exportedAt: new Date().toISOString(),
-        events: events.value,
-      }
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'text/plain' })
-      const now = new Date()
-      const stamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`
-      const filename = `vip_backup_${stamp}.txt`
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.download = filename; a.href = url
-      document.body.appendChild(a); a.click()
-      document.body.removeChild(a); URL.revokeObjectURL(url)
-    }
-
-    function importData(e) {
-      const file = e.target.files?.[0]
-      if (!file) return
-      if (!confirm(`確定要用「${file.name}」覆蓋現有所有資料嗎？\n此動作無法復原。`)) {
-        e.target.value = ''; return
-      }
-      const reader = new FileReader()
-      reader.onload = ev => {
-        try {
-          const data = JSON.parse(ev.target.result)
-          if (!Array.isArray(data.events)) {
-            alert('檔案格式錯誤，請確認是正確的備份檔案。'); return
-          }
-          events.value = data.events.map(e => ({
-            ...e,
-            subtitle:  e.subtitle  || '',
-            attendees: Array.isArray(e.attendees) && e.attendees.length > 0 && typeof e.attendees[0] === 'object'
-              ? e.attendees : [],
-            seating:   e.seating   || {},
-          }))
-          Storage.saveEvents(events.value)
-          alert(`還原成功！共 ${events.value.length} 個活動。`)
-        } catch {
-          alert('讀取失敗，檔案可能已損毀。')
-        }
-        e.target.value = ''
-      }
-      reader.readAsText(file)
     }
 
     // ── 回傳給模板 ────────────────────────────
@@ -2384,8 +2295,7 @@ createApp({
       resultView, resultEvent, resultTableData, resultUnassigned,
       openResultEvent, closeResultEvent, copyResultText, printResult,
       showSeatNote, seatNoteData, openSeatNote, closeSeatNote, downloadSeatNote, shareSeatNote,
-      cloudUrl, cloudStatus, cloudSyncing, saveCloudUrl, cloudLoad, cloudSave,
-      exportData, importData,
+      cloudStatus, cloudSyncing, cloudLoad, cloudSave,
       logoSrc: LOGO_SRC,
     }
   }
