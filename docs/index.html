@@ -1235,7 +1235,7 @@
           <div class="table-setting-row">
             <span class="table-setting-label">座位數</span>
             <input class="table-num-input" v-model="eventForm.tables.main.seats"
-                   type="number" min="1" placeholder="0" />
+                   type="number" min="1" placeholder="例：0" />
           </div>
         </div>
 
@@ -1245,10 +1245,10 @@
           <div class="table-setting-row">
             <span class="table-setting-label">桌號</span>
             <input class="table-num-input" v-model="eventForm.tables.abbot.tableNo"
-                   type="number" min="1" placeholder="0" />
+                   type="number" min="1" placeholder="例：0" />
             <span class="table-setting-label" style="margin-left:8px;">座位數</span>
             <input class="table-num-input" v-model="eventForm.tables.abbot.seats"
-                   type="number" min="1" placeholder="0" />
+                   type="number" min="1" placeholder="例：0" />
           </div>
         </div>
 
@@ -1277,10 +1277,10 @@
               <div class="table-setting-row" style="margin-bottom:0;">
                 <span class="table-setting-label">桌號</span>
                 <input class="table-num-input" v-model="newTableNo"
-                       type="number" min="1" placeholder="0" />
+                       type="number" min="1" placeholder="例：0" />
                 <span class="table-setting-label" style="margin-left:8px;">座位數</span>
                 <input class="table-num-input" v-model="newTableSeats"
-                       type="number" min="1" placeholder="0" />
+                       type="number" min="1" placeholder="例：0" />
               </div>
               <button class="add-rel-btn"
                       :disabled="!newTableNo || !newTableSeats"
@@ -1292,16 +1292,16 @@
               <div class="table-setting-row" style="margin-bottom:10px;">
                 <span class="table-setting-label">從第</span>
                 <input class="table-num-input" v-model="newTableFrom"
-                       type="number" min="1" placeholder="5" />
+                       type="number" min="1" placeholder="例：5" />
                 <span class="table-setting-label" style="margin-left:4px;">至第</span>
                 <input class="table-num-input" v-model="newTableTo"
-                       type="number" min="1" placeholder="10" />
+                       type="number" min="1" placeholder="例：10" />
                 <span style="font-size:14px;color:#666;margin-left:4px;">桌</span>
               </div>
               <div class="table-setting-row" style="margin-bottom:0;">
                 <span class="table-setting-label">每桌</span>
                 <input class="table-num-input" v-model="newTableSeats"
-                       type="number" min="1" placeholder="10" />
+                       type="number" min="1" placeholder="例：10" />
                 <span style="font-size:14px;color:#666;margin-left:4px;">位</span>
               </div>
               <button class="add-rel-btn"
@@ -1373,7 +1373,12 @@
              seatPickTable === 'abbot' ? '指派到住持桌' :
              `指派到第 ${seatPickTable} 桌` }}
         </span>
-        <span style="min-width:52px;"></span>
+        <button v-if="batchPickIds.length > 0"
+                class="modal-action" style="color:#6b3d2e;font-weight:bold;"
+                @click="confirmBatchAssign">
+          確認（{{ batchPickIds.length }} 人）
+        </button>
+        <span v-else style="min-width:52px;"></span>
       </div>
       <div class="modal-body">
         <input class="attend-search" v-model="seatSearch" placeholder="搜尋姓名…" />
@@ -1389,7 +1394,8 @@
         </div>
         <div class="vip-check-row"
              v-for="v in filteredForPicker" :key="v.id"
-             @click="assignToTable(v)">
+             :style="batchPickIds.includes(v.id) ? 'background:#fdf3ee;' : ''"
+             @click="toggleBatchPick(v.id)">
           <div style="flex:1;">
             <div style="font-size:15px;font-weight:bold;">{{ v.name }}</div>
             <div v-if="v.title || v.org" style="font-size:13px;color:#999;margin-top:2px;">
@@ -1398,7 +1404,13 @@
               <span v-if="v.org">{{ v.org }}</span>
             </div>
           </div>
-          <svg class="chevron-icon" viewBox="0 0 24 24"><polyline points="9,18 15,12 9,6"/></svg>
+          <div style="width:24px;height:24px;border-radius:6px;border:2px solid;display:flex;align-items:center;justify-content:center;flex-shrink:0;"
+               :style="batchPickIds.includes(v.id) ? 'border-color:#6b3d2e;background:#6b3d2e;' : 'border-color:#ddd;'">
+            <svg v-if="batchPickIds.includes(v.id)" width="14" height="14" viewBox="0 0 24 24"
+                 fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20,6 9,17 4,12"/>
+            </svg>
+          </div>
         </div>
 
         <!-- 隨行親眷 -->
@@ -1408,12 +1420,19 @@
           </div>
           <div class="vip-check-row"
                v-for="ea in filteredExtraForPicker" :key="ea.id"
-               @click="assignRelativeToTable(ea)">
+               :style="batchPickIds.includes(ea.id) ? 'background:#fdf3ee;' : ''"
+               @click="toggleBatchPick(ea.id)">
             <div style="flex:1;">
               <div style="font-size:15px;font-weight:bold;">{{ ea.name }}</div>
               <div style="font-size:13px;color:#999;margin-top:2px;">親眷</div>
             </div>
-            <svg class="chevron-icon" viewBox="0 0 24 24"><polyline points="9,18 15,12 9,6"/></svg>
+            <div style="width:24px;height:24px;border-radius:6px;border:2px solid;display:flex;align-items:center;justify-content:center;flex-shrink:0;"
+                 :style="batchPickIds.includes(ea.id) ? 'border-color:#6b3d2e;background:#6b3d2e;' : 'border-color:#ddd;'">
+              <svg v-if="batchPickIds.includes(ea.id)" width="14" height="14" viewBox="0 0 24 24"
+                   fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20,6 9,17 4,12"/>
+              </svg>
+            </div>
           </div>
         </template>
       </div>
@@ -1737,6 +1756,7 @@ createApp({
     const seatSearch      = ref('')
     const showSeatPicker  = ref(false)
     const seatPickTable   = ref('')
+    const batchPickIds    = ref([])
 
     // 排桌親屬同桌狀態
     const showSeatRelativePrompt  = ref(false)
@@ -1816,6 +1836,20 @@ createApp({
     function closeSeatPicker() {
       showSeatPicker.value = false
       seatPickTable.value = ''
+      batchPickIds.value = []
+    }
+
+    function toggleBatchPick(id) {
+      const i = batchPickIds.value.indexOf(id)
+      if (i !== -1) batchPickIds.value.splice(i, 1)
+      else batchPickIds.value.push(id)
+    }
+
+    function confirmBatchAssign() {
+      const key = seatPickTable.value
+      batchPickIds.value.forEach(id => doAssign(id, key))
+      Storage.saveEvents(events.value)
+      closeSeatPicker()
     }
 
     // ── 查詢函式 ──────────────────────────────
@@ -2285,7 +2319,8 @@ createApp({
       triggerUpload, uploadAttendees,
       seatView, seatEvent, unassignedVips, unassignedExtra,
       filteredForPicker, filteredExtraForPicker,
-      showSeatPicker, seatPickTable, seatSearch,
+      showSeatPicker, seatPickTable, seatSearch, batchPickIds,
+      toggleBatchPick, confirmBatchAssign,
       showSeatRelativePrompt, seatRelativeVip, seatRelativeCandidates,
       seatRelativeChecked, pendingSeatKey,
       getVipName, getVipRelatives,
