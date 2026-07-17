@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>貴賓管理系統 — 操作手冊</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Noto Sans TC", "Microsoft JhengHei", "PingFang TC", sans-serif;
+      font-size: 14px;
+      line-height: 1.8;
+      color: #2c2c2c;
+      background: #fff;
+      padding: 40px 48px;
+      max-width: 780px;
+      margin: 0 auto;
+    }
+
+    /* ── 頁首 ── */
+    .cover-header {
+      border-bottom: 3px solid #6b3d2e;
+      padding-bottom: 16px;
+      margin-bottom: 28px;
+    }
+    .cover-header h1 {
+      font-size: 22px;
+      color: #6b3d2e;
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+    .cover-header .subtitle {
+      font-size: 13px;
+      color: #999;
+    }
+
+    /* ── 系統簡介方格 ── */
+    .tab-overview {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+    .tab-box {
+      border: 1px solid #e8ddd9;
+      border-radius: 8px;
+      padding: 12px 14px;
+      background: #fdf7f4;
+    }
+    .tab-box-title {
+      font-size: 14px;
+      font-weight: bold;
+      color: #6b3d2e;
+      margin-bottom: 4px;
+    }
+    .tab-box-desc {
+      font-size: 12px;
+      color: #888;
+      line-height: 1.6;
+    }
+
+    /* ── 步驟區塊 ── */
+    .section {
+      margin-bottom: 28px;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      background: #6b3d2e;
+      padding: 8px 14px;
+      border-radius: 6px;
+      margin-bottom: 14px;
+    }
+
+    /* ── 提示框 ── */
+    .notice {
+      background: #fff8f0;
+      border-left: 4px solid #ff7300;
+      padding: 10px 14px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #6b3d2e;
+      margin-bottom: 16px;
+    }
+    .notice-blue {
+      background: #f0f7ff;
+      border-left: 4px solid #4a90d9;
+      padding: 10px 14px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: #1a5fa0;
+      margin-bottom: 16px;
+    }
+
+    /* ── 步驟列表 ── */
+    ol {
+      padding-left: 22px;
+    }
+    ol li {
+      margin-bottom: 10px;
+    }
+    ol li strong {
+      color: #6b3d2e;
+    }
+
+    /* ── 子步驟（圖示說明） ── */
+    .sub-step {
+      margin: 8px 0 8px 16px;
+      padding: 10px 14px;
+      background: #f9f9f9;
+      border-radius: 6px;
+      font-size: 13px;
+      color: #555;
+    }
+
+    /* ── 按鈕樣式示意 ── */
+    .btn-sample {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: bold;
+      vertical-align: middle;
+      margin: 0 2px;
+    }
+    .btn-brown { background: #6b3d2e; color: #fff; }
+    .btn-orange { background: #fff3e0; color: #e67e22; border: 1px solid #e0cbb0; }
+    .btn-blue   { background: #4a90d9; color: #fff; }
+    .btn-green  { background: #27ae60; color: #fff; }
+    .btn-gray   { background: #eee; color: #666; border: 1px solid #ddd; }
+
+    /* ── 表格 ── */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 13px;
+    }
+    th {
+      background: #f0e8e4;
+      color: #6b3d2e;
+      padding: 8px 12px;
+      text-align: left;
+      border: 1px solid #ddd;
+    }
+    td {
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: #fafafa; }
+
+    /* ── 成功提示 ── */
+    .done-box {
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #15803d;
+      margin-top: 10px;
+    }
+
+    /* ── 流程圖 ── */
+    .flow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin: 14px 0;
+    }
+    .flow-step {
+      background: #fdf7f4;
+      border: 1px solid #c8b8b0;
+      border-radius: 8px;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: bold;
+      color: #6b3d2e;
+      text-align: center;
+      min-width: 80px;
+    }
+    .flow-arrow {
+      color: #aaa;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    /* ── 頁尾 ── */
+    .footer {
+      margin-top: 36px;
+      padding-top: 14px;
+      border-top: 1px solid #ddd;
+      font-size: 12px;
+      color: #bbb;
+      text-align: center;
+    }
+
+    /* ── 列印設定 ── */
+    @media print {
+      body { padding: 20px 32px; }
+      .no-print { display: none; }
+      .section { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 頁首 -->
+  <div class="cover-header">
+    <h1>中台禪寺各精舍 貴賓管理系統</h1>
+    <div class="subtitle">日常操作手冊｜適用於活動當天使用系統的工作人員</div>
+  </div>
+
+  <!-- 整體流程 -->
+  <div class="section">
+    <div class="section-title">整體操作流程</div>
+    <div class="flow">
+      <div class="flow-step">①<br>建立活動</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">②<br>上傳名單</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">③<br>排桌</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">④<br>查看結果</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">⑤<br>座位小單</div>
+    </div>
+    <div class="notice-blue">
+      💡 系統共有 4 個功能頁面，點底部導航列切換：
+    </div>
+    <div class="tab-overview">
+      <div class="tab-box">
+        <div class="tab-box-title">活動管理</div>
+        <div class="tab-box-desc">建立活動、設定桌次、上傳貴賓名單 Excel</div>
+      </div>
+      <div class="tab-box">
+        <div class="tab-box-title">排桌</div>
+        <div class="tab-box-desc">手動指派桌次或點「自動排入一般桌」</div>
+      </div>
+      <div class="tab-box">
+        <div class="tab-box-title">結果</div>
+        <div class="tab-box-desc">查看各桌名單、複製文字、產生座位小單</div>
+      </div>
+      <div class="tab-box">
+        <div class="tab-box-title">設定</div>
+        <div class="tab-box-desc">雲端同步（備份/載入）、下載名單模板</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 第一部分：活動管理 -->
+  <div class="section">
+    <div class="section-title">第一步：建立活動</div>
+    <ol>
+      <li>點底部導航列的「<strong>活動管理</strong>」</li>
+      <li>點右下角橘色圓形的「<strong>＋</strong>」按鈕</li>
+      <li>填入以下欄位：
+        <table style="margin-top:8px;">
+          <tr><th>欄位</th><th>說明</th><th>必填</th></tr>
+          <tr><td>活動名稱</td><td>例：2026 夏季學界禪七</td><td>必填</td></tr>
+          <tr><td>活動屬性</td><td>例：功德午宴</td><td>選填</td></tr>
+          <tr><td>活動日期</td><td>從日曆選取</td><td>選填</td></tr>
+        </table>
+      </li>
+      <li>設定「<strong>桌次</strong>」（主辦方（山上）提供的桌次資訊）：
+        <div class="sub-step">
+          ▸ <strong>主桌</strong>：填座位數（例：10）<br>
+          ▸ <strong>住持桌</strong>：填桌號 + 座位數（例：第 2 桌、10 位）<br>
+          ▸ <strong>一般桌</strong>：可單桌新增，或用「批次範圍」一次新增多桌<br>
+          &emsp;例：從第 3 至第 15 桌，每桌 10 位 → 點「＋ 批次新增」
+        </div>
+      </li>
+      <li>點右上角「<strong>儲存</strong>」</li>
+    </ol>
+    <div class="done-box">
+      ✓ 活動建立完成！卡片上會顯示桌次摘要及「可安排 XX 人」的總座位數。
+    </div>
+  </div>
+
+  <!-- 第二部分：上傳名單 -->
+  <div class="section">
+    <div class="section-title">第二步：上傳貴賓名單</div>
+    <div class="notice">
+      ⚠️ 請先至「設定」頁下載名單模板，依格式填好後再上傳。
+    </div>
+    <ol>
+      <li>在「<strong>活動管理</strong>」頁面，找到要上傳的活動</li>
+      <li>點活動卡片右側的 <span class="btn-sample btn-orange">上傳名單</span> 按鈕</li>
+      <li>選擇已填好的 Excel 檔案（`.xlsx` 格式）</li>
+      <li>出現「<strong>上傳成功！正式貴賓 XX 人，親眷 XX 人</strong>」即完成</li>
+    </ol>
+
+    <div class="notice-blue">
+      💡 名單 Excel 欄位說明（從「設定」頁可下載模板）：
+    </div>
+    <table>
+      <tr><th>欄位</th><th>填什麼</th><th>說明</th></tr>
+      <tr><td>C 欄</td><td>車次</td><td>例：小車 01、大車 02</td></tr>
+      <tr><td>D 欄</td><td>姓名</td><td>必填，此欄空白則略過該列</td></tr>
+      <tr><td>E 欄</td><td>法名</td><td>選填</td></tr>
+      <tr><td>I 欄</td><td>護法會職稱</td><td>選填，例：副會長、委員</td></tr>
+      <tr><td>K 欄</td><td>親眷標記</td><td>填「<strong>親眷</strong>」→ 系統自動連結到上一位正式貴賓</td></tr>
+    </table>
+
+    <div class="notice" style="margin-top:14px;">
+      ⚠️ 親眷排列規則：親眷列必須緊接在對應主賓的下一列。
+      若有多位親眷，依序排列即可，系統自動連結。
+    </div>
+  </div>
+
+  <!-- 第三部分：排桌 -->
+  <div class="section">
+    <div class="section-title">第三步：排桌</div>
+    <ol>
+      <li>點底部導航列的「<strong>排桌</strong>」</li>
+      <li>從上方下拉選單選擇要排桌的活動</li>
+    </ol>
+
+    <p style="font-weight:bold;color:#6b3d2e;margin:14px 0 8px;">◆ 手動指派（主桌 / 住持桌 / 任一桌）</p>
+    <ol>
+      <li>找到要指派的桌次卡片，點 <span class="btn-sample btn-gray">＋ 手動指派</span></li>
+      <li>從清單中<strong>勾選</strong>要入桌的貴賓（可一次勾多人）</li>
+      <li>點右上角「<strong>確認（N 人）</strong>」完成指派</li>
+      <li>貴賓姓名出現在桌次卡片中即完成，底部顯示其親眷姓名</li>
+    </ol>
+
+    <div class="notice-blue" style="margin-top:10px;">
+      💡 清單分兩區：<strong>正式貴賓</strong>（上方）與 <strong>隨行親眷</strong>（下方）。
+      可用頂部搜尋框快速找人。
+    </div>
+
+    <p style="font-weight:bold;color:#6b3d2e;margin:14px 0 8px;">◆ 自動排入一般桌</p>
+    <ol>
+      <li>主桌和住持桌完成手動指派後，剩餘的貴賓可使用自動排桌</li>
+      <li>在頁面最下方「待分配」區塊，點 <span class="btn-sample btn-brown">自動排入一般桌（親屬同桌）</span></li>
+      <li>系統會自動將主賓與其親眷安排在同一桌，桌位排滿才換下一桌</li>
+    </ol>
+
+    <p style="font-weight:bold;color:#6b3d2e;margin:14px 0 8px;">◆ 移除已指派的人</p>
+    <ol>
+      <li>找到對應桌次的名字卡片</li>
+      <li>點名字右側的「<strong>×</strong>」即可移除，回到待分配清單</li>
+    </ol>
+
+    <div class="notice">
+      ⚠️ 排桌資料即時儲存在本機，無需額外按儲存。若需要讓另一台平板看到，請至「設定」頁點「儲存到雲端」。
+    </div>
+  </div>
+
+  <!-- 第四部分：結果 -->
+  <div class="section">
+    <div class="section-title">第四步：查看排桌結果</div>
+    <ol>
+      <li>點底部導航列的「<strong>結果</strong>」</li>
+      <li>從上方下拉選單選擇活動</li>
+      <li>依序顯示各桌名單（主桌 → 住持桌 → 一般桌 → 未分配）</li>
+    </ol>
+
+    <p style="font-weight:bold;color:#6b3d2e;margin:14px 0 8px;">◆ 複製排桌文字</p>
+    <ol>
+      <li>點頁面最下方 <span class="btn-sample btn-brown">複製排桌文字</span></li>
+      <li>文字自動複製到剪貼簿，可直接貼到 LINE 或記事本</li>
+    </ol>
+
+    <p style="font-weight:bold;color:#6b3d2e;margin:14px 0 8px;">◆ 產生座位小單</p>
+    <ol>
+      <li>在各桌名單中，點貴賓右側的 <span class="btn-sample btn-gray">座位小單</span></li>
+      <li>跳出小單預覽，顯示：活動名稱、貴賓姓名 / 法名、桌次、車次</li>
+      <li>選擇操作：
+        <table style="margin-top:8px;">
+          <tr><th>按鈕</th><th>說明</th></tr>
+          <tr><td><strong>下載圖片</strong></td><td>將小單存成 PNG 圖檔到裝置相簿</td></tr>
+          <tr><td><strong>分享</strong></td><td>用平板的分享功能傳送（LINE、郵件等）</td></tr>
+          <tr><td><strong>關閉</strong></td><td>關閉預覽，回到結果頁</td></tr>
+        </table>
+      </li>
+    </ol>
+  </div>
+
+  <!-- 第五部分：設定 -->
+  <div class="section">
+    <div class="section-title">設定頁功能說明</div>
+
+    <p style="font-weight:bold;color:#6b3d2e;margin:0 0 8px;">◆ 雲端同步（兩台平板共用資料時使用）</p>
+    <table>
+      <tr><th>按鈕</th><th>什麼時候用</th><th>說明</th></tr>
+      <tr>
+        <td><span class="btn-sample btn-green">⬆ 儲存到雲端</span></td>
+        <td>本機資料更新後，要讓另一台平板看到</td>
+        <td>把目前的資料推送到 Google Drive</td>
+      </tr>
+      <tr>
+        <td><span class="btn-sample btn-blue">⬇ 從雲端載入</span></td>
+        <td>要取得另一台平板的最新資料</td>
+        <td>從 Google Drive 取回最新資料（會覆蓋本機）</td>
+      </tr>
+    </table>
+    <div class="notice" style="margin-top:12px;">
+      ⚠️ 注意：兩台平板請勿同時排桌。最後按「儲存到雲端」的資料會覆蓋另一台的資料。
+    </div>
+
+    <p style="font-weight:bold;color:#6b3d2e;margin:18px 0 8px;">◆ 下載名單模板</p>
+    <ol>
+      <li>點 <span class="btn-sample btn-brown">⬇ 下載名單模板（.xlsx）</span></li>
+      <li>下載後用 Excel 或 Google 試算表開啟</li>
+      <li>依欄位填入貴賓資料，第 1 列是欄位標題（<strong>不要刪除</strong>）</li>
+      <li>填好後存成 .xlsx 格式，再至「活動管理」點「上傳名單」</li>
+    </ol>
+  </div>
+
+  <!-- 常見問題 -->
+  <div class="section">
+    <div class="section-title">常見問題</div>
+    <table>
+      <tr><th>狀況</th><th>解決方式</th></tr>
+      <tr>
+        <td>上傳名單後顯示「0 人」</td>
+        <td>確認 Excel D 欄有填姓名，且檔案格式為 .xlsx（不是 .csv 或 .xls 舊版）</td>
+      </tr>
+      <tr>
+        <td>親眷沒有正確連結到主賓</td>
+        <td>確認親眷列的 K 欄填的是「親眷」（三個字，不可有空格或錯字），且緊接在主賓下一列</td>
+      </tr>
+      <tr>
+        <td>名字排到已滿的桌</td>
+        <td>點名字右側「×」移除後，重新手動指派到正確的桌</td>
+      </tr>
+      <tr>
+        <td>儲存到雲端失敗</td>
+        <td>確認平板有連上網路，再試一次</td>
+      </tr>
+      <tr>
+        <td>重新打開系統，資料不見了</td>
+        <td>資料存在本機，確認是同一台平板、同一個瀏覽器。若有備份到雲端，點「⬇ 從雲端載入」</td>
+      </tr>
+      <tr>
+        <td>座位小單的「下載圖片」沒反應</td>
+        <td>確認瀏覽器已允許「下載檔案」權限，或改用「分享」按鈕</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- 頁尾 -->
+  <div class="footer">
+    中台禪寺各精舍貴賓管理系統 · 如需協助請聯繫普高精舍系統開發組<br>
+    或寄信至：yvonneliu0616@gmail.com
+  </div>
+
+  <!-- 列印按鈕（列印後不會出現） -->
+  <div class="no-print" style="text-align:center;margin-top:32px;">
+    <button onclick="window.print()"
+            style="background:#6b3d2e;color:#fff;border:none;padding:12px 32px;border-radius:8px;font-size:15px;cursor:pointer;font-family:inherit;">
+      列印 / 儲存為 PDF
+    </button>
+  </div>
+
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>普高精舍 — 貴賓管理系統</title>
+  <title>普高精舍回山貴賓管理系統</title>
   <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <style>
@@ -811,7 +811,7 @@
 <div id="app">
 
   <!-- Header -->
-  <header class="app-header">普高精舍 貴賓管理系統</header>
+  <header class="app-header">普高精舍回山貴賓管理系統</header>
 
   <!-- Page Content -->
   <main class="page-content">
@@ -876,7 +876,10 @@
         </div>
         <template v-else>
           <div style="font-size:14px;color:#888;margin-bottom:14px;">選擇活動開始排桌：</div>
-          <div class="vip-card" v-for="e in events" :key="e.id" @click="openSeatEvent(e)">
+          <div v-if="events.filter(e => e.needsSeating !== false).length === 0"
+               class="card-placeholder">目前沒有需要排桌的活動</div>
+          <div class="vip-card" v-for="e in events.filter(e => e.needsSeating !== false)"
+               :key="e.id" @click="openSeatEvent(e)">
             <div class="vip-info">
               <div class="vip-name">{{ e.name }}</div>
               <div class="vip-meta">
@@ -1065,14 +1068,15 @@
         </div>
 
         <!-- 無排桌資料 -->
-        <div v-if="resultTableData.length === 0" class="card">
-          <div class="card-placeholder">
-            尚未完成排桌<br>請先至「排桌」頁面分配座位
+        <template v-if="resultEvent?.needsSeating !== false">
+          <div v-if="resultTableData.length === 0" class="card">
+            <div class="card-placeholder">
+              尚未完成排桌<br>請先至「排桌」頁面分配座位
+            </div>
           </div>
-        </div>
 
-        <!-- 每桌名單 -->
-        <div class="result-table-card" v-for="t in resultTableData" :key="t.key">
+          <!-- 每桌名單 -->
+          <div class="result-table-card" v-for="t in resultTableData" :key="t.key">
           <div class="result-table-header">
             <span class="result-table-title">{{ t.title }}</span>
             <span class="result-table-count">{{ t.vipIds.length }} / {{ t.seats }} 位</span>
@@ -1110,14 +1114,30 @@
           </div>
         </div>
 
-        <!-- 操作按鈕 -->
-        <div class="result-actions" v-if="resultTableData.length > 0 || resultUnassigned.length > 0">
-          <button class="btn-primary" style="flex:1;" @click="copyResultText">
-            複製名單文字
-          </button>
-          <button class="btn-primary" style="flex:1;background:#888;" @click="printResult">
-            列印 / 儲存
-          </button>
+          <!-- 操作按鈕 -->
+          <div class="result-actions" v-if="resultTableData.length > 0 || resultUnassigned.length > 0">
+            <button class="btn-primary" style="flex:1;" @click="copyResultText">
+              複製名單文字
+            </button>
+            <button class="btn-primary" style="flex:1;background:#888;" @click="printResult">
+              列印 / 儲存
+            </button>
+          </div>
+        </template><!-- /needsSeating -->
+
+        <!-- 頒證貴賓提示詞 -->
+        <div v-if="headlineAttendeesForResult.length > 0" style="margin-top:20px;">
+          <div style="font-size:16px;font-weight:bold;color:#c94b00;margin-bottom:10px;">
+            📋 頒證提示詞（{{ headlineAttendeesForResult.length }} 人）
+          </div>
+          <div class="vip-card" v-for="att in headlineAttendeesForResult" :key="att.id"
+               @click="openNoticeCard(att.id)" style="cursor:pointer;">
+            <div class="vip-info">
+              <div class="vip-name">{{ att.name }}</div>
+              <div class="vip-meta" v-if="att.title">{{ att.title }}</div>
+            </div>
+            <svg class="chevron-icon" viewBox="0 0 24 24"><polyline points="9,18 15,12 9,6"/></svg>
+          </div>
         </div>
       </template>
 
@@ -1132,6 +1152,11 @@
         兩台平板共用同一份雲端資料，操作前請先同步。
       </div>
       <div style="background:#fff;border-radius:12px;padding:20px;margin-bottom:28px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
+        <div style="font-size:13px;color:#555;margin-bottom:6px;font-weight:500;">雲端網址（首次設定填一次即可）</div>
+        <input v-model="cloudUrl"
+               placeholder="https://script.google.com/macros/s/..."
+               style="width:100%;border:1px solid #ddd;border-radius:8px;padding:10px 12px;font-size:12px;margin-bottom:10px;box-sizing:border-box;word-break:break-all;">
+        <button class="btn-primary" style="width:100%;margin-bottom:16px;" @click="saveCloudUrl">儲存網址</button>
         <div style="display:flex;gap:10px;">
           <button class="btn-primary" style="flex:1;background:#4a90d9;"
                   :disabled="!!cloudSyncing" @click="cloudLoad">
@@ -1147,6 +1172,23 @@
                        fontSize: '13px', marginTop: '10px', textAlign: 'center' }">
           {{ cloudStatus }}
         </div>
+      </div>
+
+      <!-- 名單模板 -->
+      <div style="font-size:17px;font-weight:bold;color:#3d1f0f;margin-bottom:6px;">名單模板</div>
+      <div style="font-size:13px;color:#999;margin-bottom:16px;">
+        下載 Excel 模板，填好後至各活動點「上傳名單」匯入。
+      </div>
+      <div style="background:#fff;border-radius:12px;padding:20px;margin-bottom:28px;box-shadow:0 1px 4px rgba(0,0,0,0.08);">
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px;margin-bottom:16px;">
+          <span style="color:#aaa;">C 欄</span><span>車次</span>
+          <span style="color:#aaa;">D 欄</span><span>姓名（必填）</span>
+          <span style="color:#aaa;">E 欄</span><span>法名</span>
+          <span style="color:#aaa;">I 欄</span><span>護法會職稱</span>
+          <span style="color:#aaa;">K 欄</span><span>填「親眷」代表隨行眷屬</span>
+          <span style="color:#aaa;">任意欄</span><span>欄位標題填「頒證」，有值即列印提示詞</span>
+        </div>
+        <button class="btn-primary" style="width:100%;" @click="downloadTemplate">⬇ 下載名單模板（.xlsx）</button>
       </div>
 
       <!-- 統計 -->
@@ -1226,7 +1268,49 @@
           <input class="form-input" v-model="eventForm.date" type="date" />
         </div>
 
-        <!-- 桌次設定 -->
+        <!-- 重要備註 -->
+        <div class="form-group">
+          <label class="form-label">重要備註（提示詞列印用）</label>
+          <textarea class="form-input" v-model="eventForm.notes"
+                    placeholder="例：1. 敬請準時到場。"
+                    rows="3" style="resize:vertical;"></textarea>
+        </div>
+
+        <!-- 提示詞列印欄位 -->
+        <div class="section-divider">提示詞列印欄位</div>
+        <div class="form-group" style="gap:12px;display:flex;flex-direction:column;">
+          <label style="display:flex;align-items:center;gap:10px;font-size:15px;cursor:pointer;">
+            <input type="checkbox" v-model="eventForm.printFields.seating"
+                   style="width:18px;height:18px;accent-color:#6b3d2e;">
+            座位安排（桌次）
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;font-size:15px;cursor:pointer;">
+            <input type="checkbox" v-model="eventForm.printFields.carNo"
+                   style="width:18px;height:18px;accent-color:#6b3d2e;">
+            車次
+          </label>
+          <label style="display:flex;align-items:center;gap:10px;font-size:15px;cursor:pointer;">
+            <input type="checkbox" v-model="eventForm.printFields.notes"
+                   style="width:18px;height:18px;accent-color:#6b3d2e;">
+            重要備註
+          </label>
+        </div>
+
+        <!-- 排桌開關 -->
+        <div class="section-divider">排桌設定</div>
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:10px;font-size:15px;cursor:pointer;">
+            <input type="checkbox" v-model="eventForm.needsSeating"
+                   style="width:18px;height:18px;accent-color:#6b3d2e;">
+            此活動需要排桌
+          </label>
+          <div style="font-size:12px;color:#aaa;margin-top:4px;padding-left:28px;">
+            關閉後此活動不會出現在排桌頁面
+          </div>
+        </div>
+
+        <!-- 桌次設定（只在需要排桌時顯示） -->
+        <template v-if="eventForm.needsSeating">
         <div class="section-divider">桌次設定</div>
 
         <!-- 主桌 -->
@@ -1314,6 +1398,8 @@
         </div>
 
         <!-- 刪除 -->
+        </template><!-- /needsSeating -->
+
         <div v-if="editingEventId" class="danger-zone">
           <button class="btn-delete" @click="deleteEvent">刪除此活動</button>
         </div>
@@ -1477,6 +1563,76 @@
     </div>
   </div>
 
+  <!-- ══════════════════════════════════════════
+       頒證提示詞 Modal
+  ════════════════════════════════════════════ -->
+  <div v-if="showNoticeCard" class="modal-overlay" style="align-items:center;"
+       @click.self="closeNoticeCard">
+    <div class="seat-note-card" style="max-width:340px;">
+      <!-- 橘色標題：Logo + 普高精舍 -->
+      <div class="seat-note-top" style="display:flex;align-items:center;justify-content:center;gap:8px;">
+        <img :src="logoSrc" style="height:38px;width:auto;" onerror="this.style.display='none'">
+        <span>普高精舍</span>
+      </div>
+
+      <!-- 活動名稱 -->
+      <div class="seat-note-event">{{ noticeCardData?.eventName }}</div>
+
+      <!-- 分隔線 -->
+      <hr class="seat-note-divider">
+
+      <!-- 雙欄：姓名 ／ 車次 -->
+      <div style="display:flex;align-items:center;padding:10px 0 14px;">
+        <!-- 左：姓名 label + 姓名 + 法名 -->
+        <div style="flex:1;text-align:center;padding:0 12px;">
+          <div style="font-size:11px;color:#bbb;letter-spacing:4px;padding-bottom:6px;">姓　名</div>
+          <div style="font-size:24px;font-weight:bold;letter-spacing:4px;color:#2c2c2c;">
+            {{ noticeCardData?.name }}
+          </div>
+          <div v-if="noticeCardData?.title"
+               style="font-size:13px;color:#888;margin-top:4px;">{{ noticeCardData?.title }}</div>
+        </div>
+        <!-- 垂直分隔 + 右：車次/桌次 label + 車次 -->
+        <template v-if="noticeCardData?.printFields?.carNo && noticeCardData?.carNo">
+          <div style="width:1px;height:56px;background:#e0e0e0;flex-shrink:0;"></div>
+          <div style="flex:0 0 38%;text-align:center;padding:0 10px;">
+            <div style="font-size:11px;color:#bbb;letter-spacing:2px;padding-bottom:6px;">
+              {{ noticeCardData?.needsSeating ? '車次／桌次' : '車次' }}
+            </div>
+            <div style="font-size:14px;font-weight:bold;color:#2c2c2c;">
+              🚌 {{ noticeCardData.carNo }}
+            </div>
+          </div>
+        </template>
+      </div>
+
+      <!-- 桌次 -->
+      <template v-if="noticeCardData?.printFields?.seating && noticeCardData?.tableName">
+        <hr class="seat-note-divider">
+        <div style="text-align:center;font-size:11px;color:#bbb;letter-spacing:4px;padding:10px 0 6px;">桌　次</div>
+        <div class="seat-note-table">{{ noticeCardData.tableName }}</div>
+      </template>
+
+      <!-- 重要備註 -->
+      <template v-if="noticeCardData?.printFields?.notes && noticeCardData?.notes">
+        <hr class="seat-note-divider">
+        <div style="text-align:center;font-size:11px;color:#bbb;letter-spacing:4px;padding:10px 0 6px;">重要備註</div>
+        <div style="padding:2px 20px 16px;font-size:16px;color:#444;line-height:1.9;white-space:pre-wrap;"
+             v-html="highlightQuotes(noticeCardData.notes)"></div>
+      </template>
+
+      <!-- 按鈕 -->
+      <div style="display:flex;border-top:1px solid #f0f0f0;">
+        <button class="seat-note-close" style="border-top:none;border-right:1px solid #f0f0f0;"
+                @click="closeNoticeCard">關閉</button>
+        <button class="seat-note-close" style="border-top:none;border-right:1px solid #f0f0f0;color:#6b3d2e;font-weight:bold;"
+                @click="downloadNoticeCard">下載圖片</button>
+        <button class="seat-note-close" style="border-top:none;color:#2e6b5a;font-weight:bold;"
+                @click="shareNoticeCard">分享</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 隱藏的出席名單上傳 input -->
   <input type="file" accept=".xlsx,.xls" style="display:none;"
          @change="uploadAttendees" ref="attendeeFileInput">
@@ -1514,7 +1670,7 @@ createApp({
     const tab = ref('events')
 
     // ── 雲端同步狀態 ──────────────────────────
-    const CLOUD_URL    = 'https://script.google.com/macros/s/AKfycbz5rDT9cF0pqJDiaF_GfdqdnJeft1Y-VaAyiNGXDZKW1StaQfCOX64ZvXhEanckMCFI/exec'
+    const cloudUrl     = ref(localStorage.getItem('cloud_url') || '')
     const cloudStatus  = ref('')
     const cloudSyncing = ref('')  // '' | 'load' | 'save'
 
@@ -1553,6 +1709,9 @@ createApp({
           abbot:   { tableNo: '', seats: '' },
           regular: [],
         },
+        notes: '',
+        printFields: { seating: true, carNo: true, notes: true },
+        needsSeating: true,
       }
     }
 
@@ -1594,6 +1753,13 @@ createApp({
           abbot:   { tableNo: e.tables.abbot.tableNo, seats: e.tables.abbot.seats },
           regular: e.tables.regular.map(t => ({ ...t })),
         },
+        notes: e.notes || '',
+        printFields: {
+          seating: e.printFields?.seating !== false,
+          carNo:   e.printFields?.carNo   !== false,
+          notes:   e.printFields?.notes   !== false,
+        },
+        needsSeating: e.needsSeating !== false,
       }
       newTableNo.value = ''
       newTableSeats.value = ''
@@ -1627,6 +1793,9 @@ createApp({
             seats:   Number(t.seats) || 0,
           })),
         },
+        notes:        eventForm.value.notes.trim(),
+        printFields:  { ...eventForm.value.printFields },
+        needsSeating: eventForm.value.needsSeating,
       }
       if (editingEventId.value) {
         const idx = events.value.findIndex(e => e.id === editingEventId.value)
@@ -1700,6 +1869,15 @@ createApp({
           const ws = wb.Sheets[wb.SheetNames[0]]
           const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' })
 
+          // 自動偵測「頒證」欄位（掃描第一列標題）
+          let headlineColIdx = -1
+          if (rows.length > 0) {
+            const hdr = rows[0]
+            for (let c = 0; c < hdr.length; c++) {
+              if (String(hdr[c]).trim() === '頒證') { headlineColIdx = c; break }
+            }
+          }
+
           const attendees = []
           let currentSponsor = null
 
@@ -1716,8 +1894,12 @@ createApp({
             const isRelative = relFlag === '親眷'
             const id = 'att_' + genId()
 
+            // 頒證：有值且不為 false/0 即視為已勾選
+            const rawHL = headlineColIdx >= 0 ? String(row[headlineColIdx] || '').trim() : ''
+            const isHeadline = rawHL !== '' && rawHL.toLowerCase() !== 'false' && rawHL !== '0'
+
             if (!isRelative) {
-              const att = { id, name, title, org, carNo, isRelative: false, sponsorId: null }
+              const att = { id, name, title, org, carNo, isRelative: false, sponsorId: null, isHeadline }
               attendees.push(att)
               currentSponsor = att
             } else {
@@ -1725,6 +1907,7 @@ createApp({
                 id, name, title, org, carNo,
                 isRelative: true,
                 sponsorId:  currentSponsor?.id || null,
+                isHeadline: false,
               })
             }
           }
@@ -2077,6 +2260,321 @@ createApp({
       window.print()
     }
 
+    // ── 頒證提示詞 ────────────────────────────
+    const showNoticeCard = ref(false)
+    const noticeCardData = ref(null)
+
+    const headlineAttendeesForResult = computed(() =>
+      (resultEvent.value?.attendees || []).filter(a => a.isHeadline && !a.isRelative)
+    )
+
+    function openNoticeCard(vid) {
+      const ev  = resultEvent.value
+      const att = (ev?.attendees || []).find(a => a.id === vid)
+      const s   = ev?.seating || {}
+      let tableName = ''
+      if ((s.main || []).includes(vid)) {
+        tableName = '主桌'
+      } else if ((s.abbot || []).includes(vid)) {
+        const tNo = ev?.tables?.abbot?.tableNo
+        tableName = tNo ? `住持桌（第 ${tNo} 桌）` : '住持桌'
+      } else {
+        for (const t of (ev?.tables?.regular || [])) {
+          if ((s[String(t.tableNo)] || []).includes(vid)) {
+            tableName = `第 ${t.tableNo} 桌`; break
+          }
+        }
+      }
+      noticeCardData.value = {
+        eventName:   ev?.name   || '',
+        name:        att?.name  || '',
+        title:       att?.title || '',
+        tableName,
+        carNo:       att?.carNo || '',
+        notes:       ev?.notes  || '',
+        printFields: ev?.printFields || { seating: true, carNo: true, notes: true },
+        needsSeating: ev?.needsSeating !== false,
+      }
+      showNoticeCard.value = true
+    }
+
+    function highlightQuotes(text) {
+      if (!text) return ''
+      return text
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/「([^」]*)」/g, '<span style="color:#d00;font-weight:bold;">$1</span>')
+        .replace(/\n/g, '<br>')
+    }
+
+    function closeNoticeCard() {
+      showNoticeCard.value = false
+      noticeCardData.value = null
+    }
+
+    async function buildNoticeCanvas(d) {
+      const logoImg = await new Promise(resolve => {
+        const img = new Image()
+        img.onload  = () => resolve(img)
+        img.onerror = () => resolve(null)
+        img.src = LOGO_SRC
+      })
+
+      const W        = 600
+      const PAD      = 36
+      const HEADER_H = 100
+      const font     = '"Noto Sans TC","Microsoft JhengHei","PingFang TC",sans-serif'
+      const NOTE_LINE_H = 38
+
+      // 把文字拆成 [{text, red}] 的片段陣列
+      function parseSegments(text) {
+        const segs = []
+        const re   = /「([^」]*)」/g
+        let last = 0, m
+        while ((m = re.exec(text)) !== null) {
+          if (m.index > last) segs.push({ text: text.slice(last, m.index), red: false })
+          segs.push({ text: m[1], red: true })
+          last = re.lastIndex
+        }
+        if (last < text.length) segs.push({ text: text.slice(last), red: false })
+        return segs
+      }
+
+      // 把 segments 按 maxWidth 換行，回傳 [{segs:[{text,red}], height}]
+      function wrapSegments(ctx, rawText, maxWidth) {
+        const lines = []
+        for (const para of rawText.split('\n')) {
+          const segs   = parseSegments(para)
+          let rowSegs  = []
+          let rowWidth = 0
+          for (const seg of segs) {
+            let buf = ''
+            for (const ch of seg.text) {
+              const w = ctx.measureText(buf + ch).width
+              if (rowWidth + w > maxWidth && (rowSegs.length || buf)) {
+                if (buf) rowSegs.push({ text: buf, red: seg.red })
+                lines.push(rowSegs); rowSegs = []; rowWidth = 0; buf = ch
+              } else buf += ch
+            }
+            if (buf) { rowSegs.push({ text: buf, red: seg.red }); rowWidth += ctx.measureText(buf).width }
+          }
+          lines.push(rowSegs)
+        }
+        return lines
+      }
+
+      // 舊版 wrapText（供高度估算用）
+      function wrapText(ctx, text, maxWidth) {
+        const result = []
+        for (const para of text.split('\n')) {
+          let line = ''
+          for (const ch of para) {
+            const test = line + ch
+            if (ctx.measureText(test).width > maxWidth && line.length > 0) {
+              result.push(line); line = ch
+            } else line = test
+          }
+          result.push(line || ' ')
+        }
+        return result
+      }
+
+      // ── 預估總高度 ───────────────────────────
+      const showCar     = d.printFields.carNo  && d.carNo
+      const showSeating = d.printFields.seating && d.tableName
+      const showNotes   = d.printFields.notes   && d.notes
+
+      const tmpCtx = document.createElement('canvas').getContext('2d')
+      tmpCtx.font = `22px ${font}`
+      const noteLines = showNotes ? wrapSegments(tmpCtx, d.notes, W - PAD * 2) : []
+
+      // 姓名區雙欄高度：名字(56) + 法名(26 if any) + 上下padding
+      const NAME_H = d.title ? 56 + 26 + 8 : 56
+      const TWO_COL_H = NAME_H + 28   // 上下 padding 各 14
+
+      let H = HEADER_H
+      H += 16 + 38 + 14               // 活動名稱區
+      H += 1 + 20 + 6 + TWO_COL_H    // 分隔線 + 姓名/車次label + 雙欄
+      if (showSeating) {
+        H += 1 + 20 + 6              // 分隔線 + 桌次label
+        H += 50                      // 桌次大字
+      }
+      if (showNotes) {
+        H += 1 + 20 + 6              // 分隔線 + 重要備註label
+        H += noteLines.length * NOTE_LINE_H
+      }
+      H += 32
+
+      // ── 建立 Canvas ───────────────────────────
+      const dpr    = Math.min(window.devicePixelRatio || 2, 3)
+      const canvas = document.createElement('canvas')
+      canvas.width  = W * dpr
+      canvas.height = H * dpr
+      const ctx = canvas.getContext('2d')
+      ctx.scale(dpr, dpr)
+
+      // 白底
+      ctx.fillStyle = '#fff'
+      ctx.fillRect(0, 0, W, H)
+
+      // ── Header（橘色，Logo + 普高精舍）────────
+      ctx.fillStyle = '#ff7300'
+      ctx.fillRect(0, 0, W, HEADER_H)
+      ctx.fillStyle    = '#fff'
+      ctx.font         = `bold 26px ${font}`
+      ctx.textAlign    = 'center'
+      ctx.textBaseline = 'middle'
+      if (logoImg) {
+        const logoH  = 68
+        const logoW  = logoImg.naturalWidth * (logoH / logoImg.naturalHeight)
+        const textW  = ctx.measureText('普高精舍').width
+        const gap    = 12
+        const groupW = logoW + gap + textW
+        const startX = (W - groupW) / 2
+        ctx.drawImage(logoImg, startX, (HEADER_H - logoH) / 2, logoW, logoH)
+        ctx.textAlign = 'left'
+        ctx.fillText('普高精舍', startX + logoW + gap, HEADER_H / 2)
+        ctx.textAlign = 'center'
+      } else {
+        ctx.fillText('普高精舍', W / 2, HEADER_H / 2)
+      }
+
+      let y = HEADER_H
+      ctx.textBaseline = 'top'
+
+      // ── 活動名稱 ─────────────────────────────
+      y += 16
+      ctx.fillStyle = '#2c2c2c'
+      ctx.font      = `bold 34px ${font}`
+      ctx.textAlign = 'center'
+      ctx.fillText(d.eventName, W / 2, y)
+      y += 38 + 14
+
+      // ── 分隔線 ─────────────────────────────
+      ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 1
+      ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke()
+      y += 1 + 6
+
+      // ── 雙欄：姓名 ／ 車次 ────────────────────
+      const COL_DIV = showCar ? W * 0.60 : W   // 車次欄寬 40%
+      const nameAreaW = COL_DIV
+      const carX      = COL_DIV + (W - COL_DIV) / 2
+
+      // 姓名 / 車次-桌次 label
+      ctx.fillStyle = '#bbb'; ctx.font = `13px ${font}`
+      ctx.textAlign = 'center'
+      ctx.fillText('姓　名', nameAreaW / 2, y)
+      if (showCar) ctx.fillText(d.needsSeating ? '車次／桌次' : '車次', carX, y)
+      y += 14 + 6
+
+      // 姓名（大字，字間距）
+      ctx.fillStyle = '#2c2c2c'
+      ctx.font      = `bold 52px ${font}`
+      if (ctx.letterSpacing !== undefined) ctx.letterSpacing = '6px'
+      ctx.textAlign = 'center'
+      ctx.fillText(d.name, nameAreaW / 2, y)
+      if (ctx.letterSpacing !== undefined) ctx.letterSpacing = '0px'
+
+      // 法名
+      if (d.title) {
+        ctx.fillStyle = '#888'
+        ctx.font      = `18px ${font}`
+        ctx.fillText(d.title, nameAreaW / 2, y + 58)
+      }
+
+      // 垂直分隔線
+      if (showCar) {
+        const vLineH = TWO_COL_H
+        ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 1
+        ctx.beginPath()
+        ctx.moveTo(COL_DIV, y - 2)
+        ctx.lineTo(COL_DIV, y + vLineH - 4)
+        ctx.stroke()
+
+        // 車次（右欄，垂直置中）
+        const carY  = y + (NAME_H - 22) / 2
+        ctx.fillStyle = '#2c2c2c'
+        ctx.font      = `bold 20px ${font}`
+        ctx.textAlign = 'center'
+        ctx.fillText('🚌 ' + d.carNo, carX, carY)
+      }
+
+      y += TWO_COL_H
+
+      // ── 底部：桌次 ─────────────────────────────
+      if (showSeating) {
+        ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 1
+        ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke()
+        y += 1 + 6
+        ctx.fillStyle = '#bbb'; ctx.font = `13px ${font}`
+        ctx.textAlign = 'center'
+        ctx.fillText('桌　次', W / 2, y)
+        y += 14 + 6
+
+        ctx.fillStyle = '#6b3d2e'
+        ctx.font      = `bold 38px ${font}`
+        ctx.textAlign = 'center'
+        ctx.fillText(d.tableName, W / 2, y)
+        y += 50
+      }
+
+      // ── 底部：重要備註 ─────────────────────────
+      if (showNotes) {
+        ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = 1
+        ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke()
+        y += 1 + 6
+        ctx.fillStyle = '#bbb'; ctx.font = `13px ${font}`
+        ctx.textAlign = 'center'
+        ctx.fillText('重要備註', W / 2, y)
+        y += 14 + 6
+
+        ctx.font      = `22px ${font}`
+        ctx.textAlign = 'left'
+        const wrappedLines = wrapSegments(ctx, d.notes, W - PAD * 2)
+        for (const rowSegs of wrappedLines) {
+          let cx = PAD
+          for (const seg of rowSegs) {
+            ctx.fillStyle = seg.red ? '#cc0000' : '#2c2c2c'
+            ctx.fillText(seg.text, cx, y)
+            cx += ctx.measureText(seg.text).width
+          }
+          y += NOTE_LINE_H
+        }
+      }
+
+      return canvas
+    }
+
+    async function downloadNoticeCard() {
+      const d = noticeCardData.value
+      if (!d) return
+      const canvas   = await buildNoticeCanvas(d)
+      const filename = `${d.name}_提示詞.png`
+      canvas.toBlob(blob => {
+        const url = URL.createObjectURL(blob)
+        const a   = document.createElement('a')
+        a.download = filename; a.href = url
+        document.body.appendChild(a); a.click()
+        document.body.removeChild(a); URL.revokeObjectURL(url)
+      }, 'image/png')
+    }
+
+    async function shareNoticeCard() {
+      const d = noticeCardData.value
+      if (!d) return
+      const canvas   = await buildNoticeCanvas(d)
+      const filename = `${d.name}_提示詞.png`
+      canvas.toBlob(blob => {
+        if (navigator.canShare) {
+          const file = new File([blob], filename, { type: 'image/png' })
+          if (navigator.canShare({ files: [file] })) {
+            navigator.share({ files: [file], title: filename }).catch(() => {})
+            return
+          }
+        }
+        alert('此裝置不支援分享，請改用「下載圖片」')
+      }, 'image/png')
+    }
+
     // ── 座位小單 ──────────────────────────────
     const showSeatNote = ref(false)
     const seatNoteData = ref(null)
@@ -2262,11 +2760,19 @@ createApp({
     }
 
     // ── 雲端同步函式 ──────────────────────────
+    function saveCloudUrl() {
+      const url = cloudUrl.value.trim()
+      cloudUrl.value = url
+      localStorage.setItem('cloud_url', url)
+      cloudStatus.value = url ? '✓ 網址已儲存，下次開啟自動記住' : '網址已清除'
+    }
+
     async function cloudLoad() {
+      if (!cloudUrl.value) { cloudStatus.value = '✗ 請先填入雲端網址'; return }
       cloudSyncing.value = 'load'
       cloudStatus.value = ''
       try {
-        const res  = await fetch(CLOUD_URL + '?t=' + Date.now())
+        const res  = await fetch(cloudUrl.value + '?t=' + Date.now())
         const data = await res.json()
         if (!Array.isArray(data.events)) throw new Error('資料格式錯誤，請確認 Apps Script 設定正確')
         if (!confirm(`雲端有 ${data.events.length} 個活動，確定要覆蓋本機資料嗎？`)) {
@@ -2288,10 +2794,11 @@ createApp({
     }
 
     async function cloudSave() {
+      if (!cloudUrl.value) { cloudStatus.value = '✗ 請先填入雲端網址'; return }
       cloudSyncing.value = 'save'
       cloudStatus.value = ''
       try {
-        const res = await fetch(CLOUD_URL, {
+        const res = await fetch(cloudUrl.value, {
           method:   'POST',
           headers:  { 'Content-Type': 'text/plain' },
           body:     JSON.stringify({ events: events.value }),
@@ -2304,6 +2811,23 @@ createApp({
         cloudStatus.value = '✗ 儲存失敗：' + err.message
       }
       cloudSyncing.value = ''
+    }
+
+    // ── 名單模板下載 ──────────────────────────
+    function downloadTemplate() {
+      const rows = [
+        ['','卡號','車次','姓名','法名','','','','護法會職稱','','備註（親眷請填「親眷」）','頒證'],
+        ['','B001','小車 01','王大明','傳慧','','','','副會長','','','✓'],
+        ['','B002','小車 01','王大明眷屬','','','','','','','親眷',''],
+        ['','B003','大車 02','李小華','傳明','','','','委員','','','✓'],
+        ['','B004','大車 02','李小華眷屬','','','','','','','親眷',''],
+        ['','B005','小車 03','張三','傳智','','','','','','',''],
+      ]
+      const ws = XLSX.utils.aoa_to_sheet(rows)
+      ws['!cols'] = [{wch:4},{wch:8},{wch:10},{wch:12},{wch:10},{wch:4},{wch:4},{wch:4},{wch:14},{wch:4},{wch:18},{wch:6}]
+      const wb = XLSX.utils.book_new()
+      XLSX.utils.book_append_sheet(wb, ws, '貴賓名單')
+      XLSX.writeFile(wb, '貴賓名單模板.xlsx')
     }
 
     // ── 回傳給模板 ────────────────────────────
@@ -2329,8 +2853,11 @@ createApp({
       toggleSeatRelative, confirmSeatRelative, skipSeatRelative, closeSeatRelativePrompt,
       resultView, resultEvent, resultTableData, resultUnassigned,
       openResultEvent, closeResultEvent, copyResultText, printResult,
+      showNoticeCard, noticeCardData, headlineAttendeesForResult,
+      openNoticeCard, closeNoticeCard, downloadNoticeCard, shareNoticeCard, highlightQuotes,
       showSeatNote, seatNoteData, openSeatNote, closeSeatNote, downloadSeatNote, shareSeatNote,
-      cloudStatus, cloudSyncing, cloudLoad, cloudSave,
+      cloudUrl, cloudStatus, cloudSyncing, saveCloudUrl, cloudLoad, cloudSave,
+      downloadTemplate,
       logoSrc: LOGO_SRC,
     }
   }
